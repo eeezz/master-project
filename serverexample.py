@@ -8,8 +8,6 @@ import base64
 import os
 import threading
 
-
-
 from amaze.simu.types import InputType, OutputType, StartLocation
 
 from stable_baselines3.common.callbacks import (EvalCallback,
@@ -22,12 +20,12 @@ from amaze.extensions.sb3 import (make_vec_maze_env, env_method,
                                   TensorboardCallback, sb3_controller, CV2QTGuard)
 
 SEED = 0
-BUDGET = 5000 #was 100000 #was 5000
+BUDGET = 5000 #was 100000
 VERBOSE = False
-#TEST_SEED = 18
+
 BUFFER_SIZE = 4096
 
-HOST = '192.168.2.'  # Replace with server's IP address: 10.0.0.1
+HOST = '192.16'  # Replace with server's IP address
 PORT = 12345  # Choose any port number that is not already in use by another service on the server
 
 def handle_client_connection(client_socket):
@@ -54,7 +52,7 @@ def handle_client_connection(client_socket):
         client_socket.close()
 
 def make_string(maze_strings):
-    # Construct data from the received maze string
+    # Construct data from the received maze string...
     maze_list = []
     for maze in maze_strings:
         seed = maze['Seed']
@@ -63,7 +61,7 @@ def make_string(maze_strings):
         unicursive = maze['Without intersections']
         start = StartLocation[maze['Start']]
 
-        # Train with the resulting parameters
+        # ...Then train with the resulting parameters
         train_maze_data = Maze.BuildData(
             width=size, height=size,
             unicursive=unicursive,
@@ -75,7 +73,7 @@ def make_string(maze_strings):
 
     return maze_list
 
-def train(simple_str, FOLDER):
+def train(simple_str, FOLDER): # All from amaze
     print(f"training with maze{simple_str}")
     train_mazes = Maze.BuildData.from_string(simple_str).all_rotations()
     #eval_mazes = [d.where(seed=TEST_SEED) for d in train_mazes]
@@ -95,7 +93,7 @@ def train(simple_str, FOLDER):
     optimal_reward = (sum(env_method(eval_env, "optimal_reward"))
                       / len(train_mazes))
     tb_callback = TensorboardCallback(
-        log_trajectory_every=5,  # Eval callback (below) # was 1, try decreasing, cause only 1 extra image per trajectory now
+        log_trajectory_every=5,  # Eval callback (below) # was 1, has only few images when budget is low
         max_timestep=BUDGET
     )
     eval_callback = EvalCallback(
@@ -138,13 +136,13 @@ def main_learning(simple_strs, participant_id, is_test=False):
                 encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
                 image_paths.append(encoded_string)
 
-    #evaluate()
+    #evaluate() # Is off
 
     with CV2QTGuard(platform=False):
         amaze_main(f"--controller {BEST} --extension sb3 --maze {simple_str}"
                    f" --auto-quit --robot-inputs DISCRETE"
                    f" --robot-outputs DISCRETE --no-restore-config")
-    # Adding a small delay before the next iteration
+    # Add a delay before the next round
     time.sleep(2)
     return image_paths
 
@@ -168,7 +166,7 @@ def main():  # Create socket
             # Handle the client connection in a separate thread, so client requests do not get mixed up
             #handle_client_connection(client_socket)
 
-            # Create a new thread to handle the client connection
+            # Make a new thread to handle the client connection
             client_thread = threading.Thread(target=handle_client_connection, args=(client_socket,))
             client_thread.start()
 

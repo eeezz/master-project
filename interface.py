@@ -9,9 +9,8 @@ from PyQt5.QtWidgets import (QWidget, QHBoxLayout, QVBoxLayout, QFormLayout, QSp
                              QMessageBox, QDialog, QLabel, QGridLayout, QScrollArea, QLineEdit)
 
 BUFFER_SIZE = 4096
-
-HOST = '192.168.2.'  # Replace with server's IP address: 10.0.0.1
-PORT = 12345  # Choose any port number that is not already in use by another service on the server
+HOST = '192.16'  # Replace with server's IP address
+PORT = 12345
 
 def send_to_server(participant_id=None, maze_strings=None):
     try:
@@ -59,17 +58,14 @@ class ImageWindow(QDialog):
         self.images = images
         self.maze_strings = maze_strings
 
-        # Create a scroll area
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
-
-        # Create a widget to hold the images
         content_widget = QWidget()
         scroll_area.setWidget(content_widget)
         layout = QGridLayout(content_widget)
         max_image_size = 320  # Adjust this value if need be
 
-        # Add images to the layout
+        # Use the images in the layout
         for index, image_data in enumerate(images):
             pixmap = QPixmap()
             pixmap.loadFromData(base64.b64decode(image_data))
@@ -82,18 +78,16 @@ class ImageWindow(QDialog):
             # Set the layout for the content widget
         content_widget.setLayout(layout)
 
-        # Create an edit for user input
+        # Get user input
         self.input_field = QComboBox()
         self.input_field.setPlaceholderText("Enter the maze number with which you would like to continue (1-4)")
         self.input_field.addItems([str(i + 1) for i in range(len(images))])
         layout.addWidget(self.input_field, len(images) // 2 + 1, 0, 1, 2)
 
-        # Create a button to confirm the selection
         self.confirm_button = QPushButton("Select this maze")
         self.confirm_button.clicked.connect(self.on_confirm)
         layout.addWidget(self.confirm_button, len(images) // 2 + 2, 0, 1, 2)
 
-        # Set the main layout
         main_layout = QVBoxLayout()
         main_layout.addWidget(scroll_area)
         self.setLayout(main_layout)
@@ -112,7 +106,7 @@ class ImageWindow(QDialog):
         except ValueError:
             print("Please enter a valid number")
 
-class ImageWindowRounds(QDialog):
+class ImageWindowRounds(QDialog): #similar to the above, but specific to the last round
     def __init__(self, images):
         super().__init__()
         self.setWindowTitle("Final results!")
@@ -120,17 +114,15 @@ class ImageWindowRounds(QDialog):
         #(1840, 980)
         self.images = images
 
-        # Create a scroll area
+        # Again scroll area
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
 
-        # Create a widget to hold the images
         content_widget = QWidget()
         scroll_area.setWidget(content_widget)
         layout = QGridLayout(content_widget)
         max_image_size = 320  # Adjust this value if need be
 
-        # Add images to the layout
         for index, image_data in enumerate(images):
             pixmap = QPixmap()
             pixmap.loadFromData(base64.b64decode(image_data))
@@ -139,21 +131,17 @@ class ImageWindowRounds(QDialog):
             label = QLabel()
             label.setPixmap(scaled_pixmap)
             layout.addWidget(label, index // 2, index % 2)  # Arrange images in a grid
-
-            # Set the layout for the content widget
         content_widget.setLayout(layout)
 
-        # Create a button to confirm
         self.confirm_button = QPushButton("I'm finished, take me to the end screen")
         self.confirm_button.clicked.connect(self.accept)
         layout.addWidget(self.confirm_button)
 
-        # Set the main layout
         main_layout = QVBoxLayout()
         main_layout.addWidget(scroll_area)
         self.setLayout(main_layout)
 
-class StartWindow(QDialog):
+class StartWindow(QDialog): # Has the instructions on it
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Start")
@@ -291,7 +279,7 @@ class MainWindow(QWidget):
             self.maze_widgets2.append(maze_widget)
             self.variable_widgets2.append(widgets)
 
-        # The continue button
+        # The continue button adjusted for width
         self.save_button = QPushButton("Continue")
         self.save_button.setMinimumSize(100, 20)
         self.save_button.setMaximumSize(120, 30)
@@ -403,7 +391,7 @@ class MainWindow(QWidget):
             settings.append(setting)
         maze_strings = settings
 
-        # Show progress dialog after each round.
+        # Show progress dialog after each round. This is where everything happens from after user submission
         if self.round_count < 5:
             self.show_progress_dialog(maze_strings)
         else:
@@ -505,9 +493,9 @@ class MainWindow(QWidget):
             rotated=True,
             start=amaze.StartLocation[data["Start"]],
             clue=[amaze.Sign(value=1)],
-            p_lure=0,
+            p_lure=0, # Changed from lures
             lure=[],
-            p_trap=data["Traps"] / 100,
+            p_trap=data["Traps"] / 100, # Keep it at 100
             trap=[amaze.Sign(value=.5)]
         )
 
