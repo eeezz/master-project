@@ -1,243 +1,160 @@
 import json
 import socket
-import math
 import pathlib
-import random
 import shutil
 import time
+import traceback
+import base64
+import os
+import threading
 
-from amaze.simu.controllers.control import controller_factory, save, check_types
-from amaze.simu.controllers.tabular import TabularController
-from amaze.simu.maze import Maze
-from amaze.simu.robot import Robot
-from amaze.simu.simulation import Simulation
+
+
 from amaze.simu.types import InputType, OutputType, StartLocation
+
+from stable_baselines3.common.callbacks import (EvalCallback,
+                                                StopTrainingOnRewardThreshold)
+from stable_baselines3.common.logger import configure
+
+from amaze import Maze, Robot, Simulation, Sign, amaze_main
+from amaze.extensions.sb3 import (make_vec_maze_env, env_method,
+                                  load_sb3_controller, PPO,
+                                  TensorboardCallback, sb3_controller, CV2QTGuard)
+
+SEED = 0
+BUDGET = 5000 #was 100000 #was 5000
+VERBOSE = False
+#TEST_SEED = 18
+BUFFER_SIZE = 4096
+
+HOST = '192.168.2.'  # Replace with server's IP address: 10.0.0.1
+PORT = 12345  # Choose any port number that is not already in use by another service on the server
 
 def handle_client_connection(client_socket):
     try:
-        # Check if the client is requesting the agent image
-        data = client_socket.recv(1024).decode()
-        if data == "request_image":
-            # Placeholder: Send "place holder 1" as response
-            response = "place holder 1"
-            client_socket.sendall(response.encode())
+        data = client_socket.recv(BUFFER_SIZE).decode()
+        received_data = json.loads(data)
 
-        # Receive maze strings from the client
-        maze_data = client_socket.recv(1024).decode()
-        maze_strings = json.loads(maze_data)
-        print("Received maze strings:", maze_strings)
+        participant_id = received_data.get("participant_id")
+        maze_strings = received_data.get("maze_data")
+        print("Received participant ID:", participant_id)
+        #print("Received maze strings:", maze_strings)
 
-        # Extract the first maze string
-        first_maze_string = maze_strings[0]
-        print("First maze string:", first_maze_string)
-
-        # Use the first maze string for training. Only the first one is used as a start.
-        # Training is what the user will need to wait on before submitting new mazes.
-        train_with_maze_string(first_maze_string)
-
-        # Receive survey answers from the client
-        survey_data = client_socket.recv(1024).decode()
-        survey_answers = json.loads(survey_data)
-        print("Received survey answers:", survey_answers)
-
-        # Send response back to the client
-        client_socket.sendall("Data received".encode())
+        if maze_strings is not None:
+            simple_strs = make_string(maze_strings)
+            image_paths = main_learning(simple_strs,participant_id, is_test=False)
+            response_data = json.dumps(image_paths)
+            client_socket.sendall(response_data.encode())
 
     except Exception as e:
+        traceback.print_exc()  # This will print the traceback
         print("Error:", e)
 
     finally:
-        # Close the client socket
         client_socket.close()
 
-ALPHA = 0.1
-GAMMA = 0.5
+def make_string(maze_strings):
+    # Construct data from the received maze string
+    maze_list = []
+    for maze in maze_strings:
+        seed = maze['Seed']
+        size = maze['Size']
+        traps = maze['Traps']
+        unicursive = maze['Without intersections']
+        start = StartLocation[maze['Start']]
 
-FOLDER = pathlib.Path("tmp/demos/q_learning/")
-
-def robot_build_data():
-    return Robot.BuildData(
-        inputs=InputType.DISCRETE,
-        outputs=OutputType.DISCRETE,
-        control="tabular",
-        control_data=dict(
-            actions=Simulation.discrete_actions(),
-            epsilon=0.1, seed=0
+        # Train with the resulting parameters
+        train_maze_data = Maze.BuildData(
+            width=size, height=size,
+            unicursive=unicursive,
+            start=start,
+            seed=seed,
+            p_lure=0.0, p_trap=traps
         )
+        maze_list.append(train_maze_data.to_string())
+
+    return maze_list
+
+def train(simple_str, FOLDER):
+    print(f"training with maze{simple_str}")
+    train_mazes = Maze.BuildData.from_string(simple_str).all_rotations()
+    #eval_mazes = [d.where(seed=TEST_SEED) for d in train_mazes]
+    '''would just have mazes instead of above 2. train mazes and eval_env s would be same.. eval_mazes would not exist anymore.
+    for n in user_mazes:
+    train(m)
+    train(m):
+    mazes = m.all_rotations()
+    train_env - make_vec(mazes,..)
+    train_env - make_vec(mazes,.., log_trajecotry = True)
+    so commented eval_mazes out and also changed some instance uses to train_mazes below'''
+    robot = Robot.BuildData.from_string("DD")
+
+    train_env = make_vec_maze_env(train_mazes, robot, SEED)
+    eval_env = make_vec_maze_env(train_mazes, robot, SEED, log_trajectory=True)
+
+    optimal_reward = (sum(env_method(eval_env, "optimal_reward"))
+                      / len(train_mazes))
+    tb_callback = TensorboardCallback(
+        log_trajectory_every=5,  # Eval callback (below) # was 1, try decreasing, cause only 1 extra image per trajectory now
+        max_timestep=BUDGET
+    )
+    eval_callback = EvalCallback(
+        eval_env,
+        best_model_save_path=FOLDER, log_path=FOLDER,
+        eval_freq=BUDGET//(10*len(train_mazes)), verbose=1,
+        n_eval_episodes=len(train_mazes),
+        callback_after_eval=tb_callback,
+        callback_on_new_best=StopTrainingOnRewardThreshold(
+            reward_threshold=optimal_reward, verbose=1)
     )
 
-def train_with_maze_string(maze_string):
-    # Has been made redundant, the maze data from client side becomes strings.
-    # Here, those strings get transformed into data again. Choose one or the other.
-    # Also, constructing maze data as done below is incorrect. Check documentation for string specifications.
-    start_time = time.time()
+    model = sb3_controller(
+        PPO, policy="MlpPolicy", env=train_env, seed=SEED, learning_rate=1e-3, device="cpu")
 
-    # Construct maze data from the received maze string
-    parts = maze_string.split('_')
-    seed = int(parts[0][1:])
-    size = int(parts[1].split('x')[0])
-    unicursive = 'U' in parts[2]
-    start = StartLocation(int(parts[3][1]))
+    print("== Starting", "="*68)
+    model.set_logger(configure(FOLDER, ["csv", "tensorboard"]))
+    model.learn(BUDGET, callback=eval_callback, progress_bar=True)
 
-    # Train with the extracted parameters
-    train_maze_data = Maze.BuildData(
-        width=size, height=size,
-        unicursive=unicursive,
-        start=start,
-        seed=seed,  # Include the extracted seed
-        p_lure=0.0, p_trap=0.0
-    )
+    tb_callback.log_step(True)
+    print("="*80)
+    time.sleep(2)
 
-    print("Training with maze:", train_maze_data.to_string())
-    train_mazes = [
-        Maze.generate(train_maze_data.where(start=start))
-        for start in StartLocation
-    ]
+def main_learning(simple_strs, participant_id, is_test=False):
+    image_paths = []
+    for simple_str in simple_strs:
+        t = time.localtime()
+        current_time = time.strftime("%H;%M;%S", t)
+        FOLDER = f"tmp/demos/sb3/{participant_id}/{simple_str}/{current_time}"
+        BEST = f"{FOLDER}/best_model.zip"
+        folder = pathlib.Path(FOLDER)
+        if folder.exists():
+            shutil.rmtree(folder)
+        folder.mkdir(parents=True, exist_ok=False)
+        train(simple_str, FOLDER) #not lowercase
+        #print("finished a maze")
+        eval_image_path = folder / f"trajectories/eval_final.png"
+        if os.path.exists(eval_image_path):
+            with open(eval_image_path, "rb") as image_file:
+                encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
+                image_paths.append(encoded_string)
 
-    maze_data = train_maze_data.where(seed=14)
-    print("Evaluating with maze:", maze_data.to_string())
-    eval_mazes = [
-        Maze.generate(maze_data.where(start=start))
-        for start in StartLocation
-    ]
+    #evaluate()
 
-    robot = robot_build_data()
-    policy: TabularController = controller_factory(robot.control,
-                                                   robot.control_data)
-    assert check_types(policy, robot)
-
-    simulation = Simulation(train_mazes[0], robot)
-
-    steps = [0, 0]
-
-    n = 20 # Changed from 150 to 20 for ease of testing
-    _w = math.ceil(math.log10(n))
-    _log_format = (f"\r[{{:6.2f}}%] Episode {{:{_w}d}}; train: {{:.2f}};"
-                   f" eval: {{:.2f}}; optimal: {{:.2f}}")
-
-    print()
-    print("=" * 80)
-    print("Training for a maximum of", n, "episodes")
-
-    i = None
-    for i in range(n):
-        simulation.reset(train_mazes[i % len(train_mazes)])
-        t_reward = q_train(simulation, policy)
-        steps[0] += simulation.timestep
-
-        policy.epsilon = .1 * (1 - i / n)
-
-        e_rewards, en_rewards = [], []
-        for em in eval_mazes:
-            simulation.reset(em)
-            e_rewards.append(q_eval(simulation, policy))
-            en_rewards.append(simulation.infos()["pretty_reward"])
-            steps[1] += simulation.timestep
-        e_rewards = sum(e_rewards) / len(e_rewards)
-        en_rewards = sum(en_rewards) / len(en_rewards)
-
-        print(_log_format.format(100 * (i + 1) / n, i,
-                                 t_reward, e_rewards, en_rewards),
-              end='', flush=True)
-
-        if math.isclose(en_rewards, 1):
-            print()
-            print("[!!!!!!!] Optimal policy found [!!!!!!!]")
-            break
-        elif i == n - 1:
-            print()
-
-    print(f"Training took {time.time() - start_time:.2g} seconds for:\n"
-          f" > {i} episodes\n"
-          f" > {steps[0]} training steps\n"
-          f" > {steps[1]} evaluating steps")
-
-    return policy
-
-
-def q_train(simulation, policy):
-    state = simulation.generate_inputs().copy()
-    action = policy(state)
-
-    while not simulation.done():
-        reward = simulation.step(action)
-        state_ = simulation.observations.copy()
-        action_ = policy(state)
-        policy.q_learning(state, action, reward, state_, action_,
-                          alpha=ALPHA, gamma=GAMMA)
-        state, action = state_, action_
-
-    return simulation.robot.reward
-
-
-def q_eval(simulation, policy):
-    action = policy.greedy_action(simulation.observations)
-    while not simulation.done():
-        simulation.step(action)
-        action = policy.greedy_action(simulation.observations)
-
-    return simulation.robot.reward
-
-
-def evaluate_generalization(policy):
-    policy.epsilon = 0
-    rng = random.Random(0)
-    robot = robot_build_data()
-
-    n = 25 # Changed from 1000 to 25
-    rewards = []
-
-    print()
-    print("=" * 80)
-    print("Testing for generalization")
-    _log_format = f"\r[{{:6.2f}}%] normalized reward: {{:.1g}} for {{}}"
-
-    for i in range(n):
-        maze_data = Maze.BuildData(
-            width=rng.randint(10, 30),
-            height=rng.randint(10, 20),
-            seed=rng.randint(0, 10000),
-            unicursive=True,
-            p_lure=0, p_trap=0
-        )
-        maze = Maze.generate(maze_data)
-        simulation = Simulation(maze, robot)
-        simulation.run(policy)
-        reward = simulation.normalized_reward()
-        rewards.append(reward)
-        print(_log_format.format(100 * (i + 1) / n, reward,
-                                 maze_data.to_string()),
-              end='', flush=True)
-    print()
-
-    avg_reward = sum(rewards) / n
-    optimal = " (optimal)" if math.isclose(avg_reward, 1) else ""
-    print(f"Average score of {avg_reward}{optimal} on {n} random mazes")
-    print("=" * 80)
-
-
-def main_learning(is_test=False): # Gets used where???
-    if FOLDER.exists():
-        shutil.rmtree(FOLDER)
-    FOLDER.mkdir(parents=True, exist_ok=False)
-
-    policy = train_with_maze_string()
-
-    policy_file = save(policy, FOLDER.joinpath("policy"),
-                       dict(comment="Can solve unicursive mazes"))
-    print("Saved optimized policy to", policy_file)
-
-    evaluate_generalization(policy)
-
+    with CV2QTGuard(platform=False):
+        amaze_main(f"--controller {BEST} --extension sb3 --maze {simple_str}"
+                   f" --auto-quit --robot-inputs DISCRETE"
+                   f" --robot-outputs DISCRETE --no-restore-config")
+    # Adding a small delay before the next iteration
+    time.sleep(2)
+    return image_paths
 
 def main():  # Create socket
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-    # Define server address and port
-    server_address = ('127.0.0.1', 12345)
-
-    # Bind the socket
+    # Server address and port
+    server_address = (HOST, PORT)
     server_socket.bind(server_address)
+
 
     # Listen for incoming connections, currently set to max 5 clients
     server_socket.listen(5)
@@ -248,15 +165,18 @@ def main():  # Create socket
             client_socket, client_address = server_socket.accept()
             print("Accepted connection from", client_address)
 
-            # Handle the client connection in a separate thread, so cleint requests do not get mixed up
-            handle_client_connection(client_socket)
+            # Handle the client connection in a separate thread, so client requests do not get mixed up
+            #handle_client_connection(client_socket)
+
+            # Create a new thread to handle the client connection
+            client_thread = threading.Thread(target=handle_client_connection, args=(client_socket,))
+            client_thread.start()
 
     except KeyboardInterrupt:
         print("Server stopped.")
 
     finally:
         server_socket.close()
-
 
 if __name__ == "__main__":
     main()
