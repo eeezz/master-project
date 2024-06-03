@@ -24,8 +24,7 @@ BUDGET = 5000 #was 100000
 VERBOSE = False
 
 BUFFER_SIZE = 4096
-
-HOST = '192.16'  # Replace with server's IP address
+HOST = '123.45'  # Replace with server's IP address
 PORT = 12345  # Choose any port number that is not already in use by another service on the server
 
 def handle_client_connection(client_socket):

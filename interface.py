@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import (QWidget, QHBoxLayout, QVBoxLayout, QFormLayout, QSp
                              QMessageBox, QDialog, QLabel, QGridLayout, QScrollArea, QLineEdit)
 
 BUFFER_SIZE = 4096
-HOST = '192.16'  # Replace with server's IP address
+HOST = '123.45'  # Replace with server's IP address
 PORT = 12345
 
 def send_to_server(participant_id=None, maze_strings=None):
@@ -196,6 +196,13 @@ class PreImageWindow(QDialog):
 
     def get_participant_id(self):
         return self.participant_id
+
+    def closeEvent(self, event):
+        if not hasattr(self, 'participant_id') or not self.participant_id:
+            QMessageBox.warning(self, "Input Error", "Please enter a valid participant ID.")
+            event.ignore()  # Ignore a user closing the window before entering their id
+        else:
+            event.accept()  # Closing the window with an id in the input box is also not possible
 
 class EndWindow(QDialog):
     def __init__(self, main_window):
