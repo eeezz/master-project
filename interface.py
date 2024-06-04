@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import (QWidget, QHBoxLayout, QVBoxLayout, QFormLayout, QSp
                              QMessageBox, QDialog, QLabel, QGridLayout, QScrollArea, QLineEdit)
 
 BUFFER_SIZE = 4096
-HOST = '123.45'  # Replace with server's IP address
+HOST = 'localhost'  # Replace with server's IP address
 PORT = 12345
 
 def send_to_server(participant_id=None, maze_strings=None):
@@ -106,6 +106,13 @@ class ImageWindow(QDialog):
         except ValueError:
             print("Please enter a valid number")
 
+    def closeEvent(self, event):
+        if not hasattr(self, 'participant_id') or not self.participant_id:
+            QMessageBox.warning(self, "Cannot close", "Please select a maze number.")
+            event.ignore()  # Ignore a user closing the window before entering their id
+        else:
+            event.accept()  # Closing the window with an id in the input box is also not possible
+
 class ImageWindowRounds(QDialog): #similar to the above, but specific to the last round
     def __init__(self, images):
         super().__init__()
@@ -190,7 +197,7 @@ class PreImageWindow(QDialog):
     def on_start(self):
         self.participant_id = self.participant_id_input.text().strip()
         if not self.participant_id:
-            QMessageBox.warning(self, "Input Error", "Please enter a valid participant ID.")
+            QMessageBox.warning(self, "No Input", "Please enter your participant ID first.")
             return
         self.accept()
 
@@ -199,7 +206,7 @@ class PreImageWindow(QDialog):
 
     def closeEvent(self, event):
         if not hasattr(self, 'participant_id') or not self.participant_id:
-            QMessageBox.warning(self, "Input Error", "Please enter a valid participant ID.")
+            QMessageBox.warning(self, "Cannot close", "Please enter your participant ID and start.")
             event.ignore()  # Ignore a user closing the window before entering their id
         else:
             event.accept()  # Closing the window with an id in the input box is also not possible
@@ -211,7 +218,7 @@ class EndWindow(QDialog):
         self.resize(450, 300)
         layout = QVBoxLayout()
         self.label = QLabel(
-            "Thank you for participating.\n\n Please go to the following link to complete the survey and receive your compensation. \n https://forms.gle/PPW3GGe4XpoKQyc18\n\n You may now close the program.")
+            "Thank you for participating.\n\n Please copy the following link to complete the survey and receive your compensation. \n https://forms.gle/PPW3GGe4XpoKQyc18\n\n You may now close the program.")
         self.label.setTextInteractionFlags(Qt.TextSelectableByMouse)
         # Set font size
         font = self.label.font()
