@@ -7,7 +7,7 @@ from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import (QWidget, QHBoxLayout, QVBoxLayout, QFormLayout, QSpinBox, QDoubleSpinBox,
                              QPushButton, QCheckBox, QComboBox,
                              QMessageBox, QDialog, QLabel, QGridLayout, QScrollArea, QLineEdit)
-
+ 
 BUFFER_SIZE = 4096
 HOST = 'localhost' # Change to ip of where server is located
 PORT = 50000
