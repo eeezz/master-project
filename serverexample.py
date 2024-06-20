@@ -206,9 +206,6 @@ def main():  # Create socket
             client_socket, client_address = server_socket.accept()
             print("Accepted connection from", client_address)
 
-            # Handle the client connection in a separate thread, so client requests do not get mixed up
-            #handle_client_connection(client_socket)
-
             # Make a new thread to handle the client connection
             client_thread = threading.Thread(target=handle_client_connection, args=(client_socket,))
             client_thread.start()
