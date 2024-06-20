@@ -9,8 +9,8 @@ from PyQt5.QtWidgets import (QWidget, QHBoxLayout, QVBoxLayout, QFormLayout, QSp
                              QMessageBox, QDialog, QLabel, QGridLayout, QScrollArea, QLineEdit)
 
 BUFFER_SIZE = 4096
-HOST = 'localhost'  # Replace with server's IP address
-PORT = 12345
+HOST = 'localhost' # Change to ip of where server is located
+PORT = 50000
 
 def send_to_server(participant_id=None, maze_strings=None):
     try:
@@ -78,15 +78,18 @@ class ImageWindow(QDialog):
             # Set the layout for the content widget
         content_widget.setLayout(layout)
 
+
         # Get user input
+        instruction_label = QLabel("Enter the maze number with which you would like to continue (1-4)")
+        layout.addWidget(instruction_label, len(images) // 2 + 1, 0, 1, 2)
+
         self.input_field = QComboBox()
-        self.input_field.setPlaceholderText("Enter the maze number with which you would like to continue (1-4)")
         self.input_field.addItems([str(i + 1) for i in range(len(images))])
-        layout.addWidget(self.input_field, len(images) // 2 + 1, 0, 1, 2)
+        layout.addWidget(self.input_field, len(images) // 2 + 2, 0, 1, 2)
 
         self.confirm_button = QPushButton("Select this maze")
         self.confirm_button.clicked.connect(self.on_confirm)
-        layout.addWidget(self.confirm_button, len(images) // 2 + 2, 0, 1, 2)
+        layout.addWidget(self.confirm_button, len(images) // 2 + 3, 0, 1, 2)
 
         main_layout = QVBoxLayout()
         main_layout.addWidget(scroll_area)
@@ -406,7 +409,7 @@ class MainWindow(QWidget):
         maze_strings = settings
 
         # Show progress dialog after each round. This is where everything happens from after user submission
-        if self.round_count < 5:
+        if self.round_count < 10: #make 10
             self.show_progress_dialog(maze_strings)
         else:
             self.show_progress_dialog_rounds(maze_strings)
@@ -416,7 +419,6 @@ class MainWindow(QWidget):
         self.progress_dialog = ProgressDialog()
         self.progress_dialog.setWindowModality(Qt.WindowModal)
         self.progress_dialog.show()
-        #response = send_to_server(#participant_id, maze_strings)
         response = send_to_server(self.participant_id, maze_strings)
         if response:
             try:
