@@ -18,4 +18,4 @@ DATA_FILE=$1
 
 # Run the worker.py script with the data file
 python worker2.py --data-file "$1" --output-file "$2"
-#alternatively use python whole path /home/username/project/worker2.py 
+# Alternatively use the whole path /home/username/project/worker2.py
