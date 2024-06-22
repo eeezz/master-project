@@ -7,6 +7,7 @@ import traceback
 import base64
 import os
 import threading
+import math
 from PIL import Image
 
 from amaze.simu.types import InputType, OutputType, StartLocation
@@ -21,7 +22,7 @@ from amaze.extensions.sb3 import (make_vec_maze_env, env_method,
                                   TensorboardCallback, sb3_controller, CV2QTGuard)
 
 SEED = 0
-BUDGET = 5000
+BUDGET = 100000
 VERBOSE = False
 
 BUFFER_SIZE = 4096
@@ -37,10 +38,9 @@ def handle_client_connection(client_socket):
         maze_strings = received_data.get("maze_data")
         print("Received participant ID:", participant_id)
         print("Received maze strings:", maze_strings)
-
         if maze_strings is not None:
             simple_strs = make_string(maze_strings)
-            image_paths = main_learning(simple_strs,participant_id, is_test=False)
+            image_paths = main_learning(simple_strs, participant_id, is_test=False)
             response_data = json.dumps(image_paths)
             client_socket.sendall(response_data.encode())
 
@@ -103,7 +103,7 @@ def train(simple_str, FOLDER): # All from amaze
 
     print("== Starting", "="*68)
     model.set_logger(configure(FOLDER, ["csv", "tensorboard"]))
-    model.learn(BUDGET, callback=eval_callback, progress_bar=True)
+    model.learn(BUDGET, callback=eval_callback, progress_bar=False)
 
     tb_callback.log_step(True)
     print("="*80)
@@ -122,7 +122,6 @@ def main_learning(simple_strs, participant_id, is_test=False):
             shutil.rmtree(folder)
         folder.mkdir(parents=True, exist_ok=False)
         train(simple_str, FOLDER)
-
         eval_image_path = folder / f"trajectories/eval_final.png"
         if os.path.exists(eval_image_path):
             with open(eval_image_path, "rb") as image_file:
@@ -132,7 +131,7 @@ def main_learning(simple_strs, participant_id, is_test=False):
 
     # Create timeline directly after maze result has been saved
     round_image_path = create_round_image(participant_id, round_images)
-    append_to_timeline(participant_id, round_image_path)       
+    append_to_timeline(participant_id, round_image_path)
 
     #evaluate() # Is off
 
@@ -206,9 +205,13 @@ def main():  # Create socket
             client_socket, client_address = server_socket.accept()
             print("Accepted connection from", client_address)
 
+            # Handle the client connection in a separate thread, so client requests do not get mixed up
+            #handle_client_connection(client_socket)
+
             # Make a new thread to handle the client connection
             client_thread = threading.Thread(target=handle_client_connection, args=(client_socket,))
             client_thread.start()
+
 
     except KeyboardInterrupt:
         print("Server stopped.")

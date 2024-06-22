@@ -7,9 +7,9 @@ from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import (QWidget, QHBoxLayout, QVBoxLayout, QFormLayout, QSpinBox, QDoubleSpinBox,
                              QPushButton, QCheckBox, QComboBox,
                              QMessageBox, QDialog, QLabel, QGridLayout, QScrollArea, QLineEdit)
- 
+
 BUFFER_SIZE = 4096
-HOST = 'localhost' # Change to ip of where server is located
+HOST = 'localhost'# Change to ip of where server is located
 PORT = 50000
 
 def send_to_server(participant_id=None, maze_strings=None):
@@ -17,11 +17,7 @@ def send_to_server(participant_id=None, maze_strings=None):
         server_address = (HOST, PORT)
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client_socket:
             client_socket.connect(server_address)
-            #print("Connected to server at", server_address) for checking when not using localhost
 
-            # Convert maze_strings to JSON
-            #maze_data = json.dumps(maze_strings)
-            #client_socket.sendall(maze_data.encode())
             # Combine participant ID and maze_strings into one JSON object
             data = {
                 "participant_id": participant_id,
@@ -52,7 +48,7 @@ class ImageWindow(QDialog):
     def __init__(self, images, maze_strings, update_callback):
         super().__init__()
         self.setWindowTitle("Result trajectories")
-        self.resize(1000, 800) #was (800, 600)
+        self.resize(1000, 800)
         self.update_callback = update_callback
 
         self.images = images
@@ -157,7 +153,7 @@ class StartWindow(QDialog): # Has the instructions on it
         self.setWindowTitle("Start")
         self.resize(450, 300)
         layout = QVBoxLayout()
-        self.label = QLabel("Welcome to the experiment and thank you for your participation.\n\n Please make sure you have an internet connection and plenty of battery. Your goal is to teach a virtual agent to navigate any maze.\n You will do this by creating several rounds of mazes on which it can train first.\n\n In the next screen, you will be shown what the results of such a training round can look like. Mazes (and rotated versions of each) are depicted.\n The trajectory that a pretrained first agent took is shown as dotted lines. Once you have looked at it, you may continue. Then the experiment begins.\n\n\n\n\n Per round, you will be shown 4 mazes that have no rotated versions. Each of these has several values that you can change, you are completely free in what and how\n you decide to change or to leave unchanged. White arrows are clues, these cannot be changed. Grey arrows are traps, which can be changed.\n When you feel you are done, then you may click the 'continue' button in the bottom-right of that screen.\n A pop up is then shown to indicate the training has begun, during which you won’t need to do anything.\n\n This training process may take a few minutes (4-10 on average) and you are not obligated to stay in front of your screen during that time. Once the popup disappears,\n the results of your training are shown. Each result shows a maze you created and its rotations.\n\n You may choose one of the 4 results from the drop-down menu to continue to the next round. All mazes will be updated to the one you picked.\n The cycle begins again, and you may change any and all values once more. For the last round you don't need to pick a result.\n\n\n\n\n You will be given a few sessions of creating and training. At the end, you will find a link to a survey. Please fill this in, after which you may claim your compensation.\n\n To begin, please click 'start' to receive the pre-trained first agent.")
+        self.label = QLabel("Welcome to the experiment and thank you for your participation.\n\n Please make sure you have an internet connection and plenty of battery. Your goal is to teach a virtual agent to navigate any maze.\n You will do this by creating 4 x 10 mazes on which it can train first.\n\n In the next screen, you will be shown what the results of such a training round can look like. The trajectory of an agent is shown as dotted lines.\n Once you are ready to start, you may continue. \n\n\n\n\n Per round, you will be shown 4 mazes. Each of these has several values that you can change, you are completely free in what and how\n you decide to change or to leave unchanged. White arrows are clues, these cannot be changed. Grey arrows are traps, which can be changed.\n When you feel you are done, then you may click the 'continue' button in the bottom-right of that screen.\n A pop up is then shown to indicate the training has begun, during which you won’t need to do anything.\n\n This training process may take a few minutes (4-10 min., depending on your submitted mazes) and you are not obligated to stay\n in front of your screen during that time. Once the popup disappears,\n the results of your training are shown. Each result shows 1 maze you created and 3 rotated versions.\n\n You may choose one of the 4 results from the drop-down menu to take to the next round. All mazes will be updated to the one you picked.\n The cycle begins again, and you may change any and all values once more. For the last round you don't need to pick a result.\n\n\n\n\n You will be given 10 rounds of creating and training. At the end, you will find a link to a survey. Please fill this in, after which you may claim your compensation.\n\n To begin, please click 'start' to receive the pre-trained example agent.")
         self.label.setTextInteractionFlags(Qt.TextSelectableByMouse)
 
         # Set the font size
