@@ -153,12 +153,12 @@ class StartWindow(QDialog): # Has the instructions on it
         self.setWindowTitle("Start")
         self.resize(450, 300)
         layout = QVBoxLayout()
-        self.label = QLabel("Welcome to the experiment and thank you for your participation.\n\n Please make sure you have an internet connection and plenty of battery. Your goal is to teach a virtual agent to navigate any maze.\n You will do this by creating 4 x 10 mazes on which it can train first.\n\n In the next screen, you will be shown what the results of such a training round can look like. The trajectory of an agent is shown as dotted lines.\n Once you are ready to start, you may continue. \n\n\n\n\n Per round, you will be shown 4 mazes. Each of these has several values that you can change, you are completely free in what and how\n you decide to change or to leave unchanged. White arrows are clues, these cannot be changed. Grey arrows are traps, which can be changed.\n When you feel you are done, then you may click the 'continue' button in the bottom-right of that screen.\n A pop up is then shown to indicate the training has begun, during which you won’t need to do anything.\n\n This training process may take a few minutes (4-10 min., depending on your submitted mazes) and you are not obligated to stay\n in front of your screen during that time. Once the popup disappears,\n the results of your training are shown. Each result shows 1 maze you created and 3 rotated versions.\n\n You may choose one of the 4 results from the drop-down menu to take to the next round. All mazes will be updated to the one you picked.\n The cycle begins again, and you may change any and all values once more. For the last round you don't need to pick a result.\n\n\n\n\n You will be given 10 rounds of creating and training. At the end, you will find a link to a survey. Please fill this in, after which you may claim your compensation.\n\n To begin, please click 'start' to receive the pre-trained example agent.")
+        self.label = QLabel("Welcome to the experiment and thank you for your participation.\n\nPlease make sure you have an internet connection and plenty of battery. Your goal is to teach a virtual agent to become\nthe best at navigating mazes. You will do this by iteratively creating mazes for 10 rounds on which the agent can train first.\n\nIn the next screen, you will be shown an example of a poorly trained agent. The route it took is shown as dotted lines.\nPlease enter your participant ID once you have looked at the example. \n\n\n\nDuring the experiment, you will be shown 4 mazes per round. Each of these has adjustable variables, you are completely free in\nwhat and how you decide to change/leave unchanged. White arrows within a maze are clues, they can't be changed.\nGrey arrows are traps, their prevalence can be increased/decreased.\n\nWhen you feel you are done with the 4 mazes, you may click the 'Submit' button in that screen.\nA pop up is then shown to indicate the training has begun, during which you won’t need to do anything.\n\nThis training process may take a few minutes (2-10 min., depending on your submitted mazes) and you are not obligated to\nstay in front of your screen during that time. Once the popup disappears, the results of your training are shown.\nEach result shows 1 maze you created and 3 rotated versions.\n\nYou may select 1 result from the drop-down menu to take to the next round. All mazes will be updated to the one you picked.\nThen the cycle begins again for the next round. For the last round you don't need to pick a result.\nYour final test results may hold your agent's best performance yet!\n\n\n\nThe end screen will link you to a survey. Please fill this in (it's anonymous), after which you may claim your compensation.\n\nTo begin, please click 'start' to see the poorly trained example agent.\n")
         self.label.setTextInteractionFlags(Qt.TextSelectableByMouse)
 
         # Set the font size
         font = self.label.font()
-        font.setPointSize(10)  # Adjust the font size as needed
+        font.setPointSize(11)  # Adjust the font size as needed
         self.label.setFont(font)
 
         layout.addWidget(self.label)
@@ -217,7 +217,7 @@ class EndWindow(QDialog):
         self.resize(450, 300)
         layout = QVBoxLayout()
         self.label = QLabel(
-            "Thank you for participating.\n\n Please copy the following link to complete the survey and receive your compensation. \n https://forms.gle/PPW3GGe4XpoKQyc18\n\n You may now close the program.")
+            "Thank you for participating.\n\n Please copy the following link to complete the survey. \n https://forms.gle/HhGsPgW7ndKAbLP17\n\n You may now close the program.")
         self.label.setTextInteractionFlags(Qt.TextSelectableByMouse)
         # Set font size
         font = self.label.font()
@@ -293,7 +293,7 @@ class MainWindow(QWidget):
             self.variable_widgets2.append(widgets)
 
         # The continue button adjusted for width
-        self.save_button = QPushButton("Continue")
+        self.save_button = QPushButton("Submit")
         self.save_button.setMinimumSize(100, 20)
         self.save_button.setMaximumSize(120, 30)
         self.save_button.clicked.connect(self.save_settings)
