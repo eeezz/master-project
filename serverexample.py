@@ -52,7 +52,7 @@ def handle_client_connection(client_socket):
         client_socket.close()
 
 def make_string(maze_strings):
-    # Construct data from the received maze string...
+    # Construct the received data
     maze_list = []
     for maze in maze_strings:
         seed = maze['Seed']
@@ -61,7 +61,6 @@ def make_string(maze_strings):
         unicursive = maze['Without intersections']
         start = StartLocation[maze['Start']]
 
-        # ...Then train with the resulting parameters
         train_maze_data = Maze.BuildData(
             width=size, height=size,
             unicursive=unicursive,
@@ -69,23 +68,24 @@ def make_string(maze_strings):
             seed=seed,
             p_lure=0.0, p_trap=traps
         )
+        #Convert data into string
         maze_list.append(train_maze_data.to_string())
 
     return maze_list
 
-def train(simple_str, FOLDER): # All from amaze
+def train(simple_str, FOLDER):
     print(f"training with maze{simple_str}")
     train_mazes = Maze.BuildData.from_string(simple_str).all_rotations()
 
     robot = Robot.BuildData.from_string("DD")
-
+    # the following environments are equal. Change if needed
     train_env = make_vec_maze_env(train_mazes, robot, SEED)
     eval_env = make_vec_maze_env(train_mazes, robot, SEED, log_trajectory=True)
 
     optimal_reward = (sum(env_method(eval_env, "optimal_reward"))
                       / len(train_mazes))
     tb_callback = TensorboardCallback(
-        log_trajectory_every=10,  # Was 1 originally. The higher, the less images. Especially when budget is low
+        log_trajectory_every=10,  # The higher, the less trajectory images, related to BUDGET.
         max_timestep=BUDGET
     )
     eval_callback = EvalCallback(
@@ -99,7 +99,7 @@ def train(simple_str, FOLDER): # All from amaze
     )
 
     model = sb3_controller(
-        PPO, policy="MlpPolicy", env=train_env, seed=SEED, learning_rate=1e-3, device="cuda")#device="cpu" and cuda was faster
+        PPO, policy="MlpPolicy", env=train_env, seed=SEED, learning_rate=1e-3, device="cuda")
 
     print("== Starting", "="*68)
     model.set_logger(configure(FOLDER, ["csv", "tensorboard"]))
@@ -115,7 +115,7 @@ def main_learning(simple_strs, participant_id, is_test=False):
     for simple_str in simple_strs:
         t = time.localtime()
         current_time = time.strftime("%H;%M;%S", t)
-        FOLDER = f"results/{participant_id}/{simple_str}/{current_time}" # Change to results folder
+        FOLDER = f"results/{participant_id}/{simple_str}/{current_time}"
         BEST = f"{FOLDER}/best_model.zip"
         folder = pathlib.Path(FOLDER)
         if folder.exists():
@@ -133,8 +133,6 @@ def main_learning(simple_strs, participant_id, is_test=False):
     round_image_path = create_round_image(participant_id, round_images)
     append_to_timeline(participant_id, round_image_path)
 
-    #evaluate() # Is off
-
     # Optionally add a delay before the next round
     #time.sleep(2)
     return image_paths
@@ -144,10 +142,8 @@ def create_round_image(participant_id, round_images):
     results_folder = pathlib.Path(f"results/{participant_id}")
     round_image_path = results_folder / "round_image.png"
 
-    # Since all images are the same size
+    # Since all images are the same size, create a new vertical image for the round
     image_width, image_height = round_images[0].size
-
-    # Create a new vertical image for the round
     round_image = Image.new('RGB', (image_width, image_height * 4), (255, 255, 255))
 
     for i, img in enumerate(round_images):
@@ -175,7 +171,7 @@ def append_to_timeline(participant_id, round_image_path):
         big_image = Image.open(timeline_image_path)
         big_image = big_image.convert('RGB')  # So it is in the correct mode
 
-        # Create a new big image with space for the new round
+        # Leave space for the new round
         big_image_width, big_image_height = big_image.size
         new_big_image = Image.new('RGB', (big_image_width + round_image_width, round_image_height), (255, 255, 255))
         # Add new image horizontally
@@ -189,7 +185,7 @@ def append_to_timeline(participant_id, round_image_path):
     print(f"Saved big image to {timeline_image_path}")
 
 
-def main():  # Create socket
+def main(): 
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     # Server address and port
@@ -201,17 +197,13 @@ def main():  # Create socket
     print("Server is listening for incoming connections...")
 
     try:
-        while True:  # Must accept client connection and state so
+        while True:  
             client_socket, client_address = server_socket.accept()
             print("Accepted connection from", client_address)
-
-            # Handle the client connection in a separate thread, so client requests do not get mixed up
-            #handle_client_connection(client_socket)
 
             # Make a new thread to handle the client connection
             client_thread = threading.Thread(target=handle_client_connection, args=(client_socket,))
             client_thread.start()
-
 
     except KeyboardInterrupt:
         print("Server stopped.")
