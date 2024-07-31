@@ -26,7 +26,7 @@ def send_to_server(participant_id=None, maze_strings=None):
             data_json = json.dumps(data)
             client_socket.sendall(data_json.encode())
 
-        # Receive response from the server
+        # Receive response from the server in chunks
             response = b""
             while True:
                 chunk = client_socket.recv(BUFFER_SIZE)
@@ -74,7 +74,6 @@ class ImageWindow(QDialog):
             # Set the layout for the content widget
         content_widget.setLayout(layout)
 
-
         # Get user input
         instruction_label = QLabel("Enter the maze number with which you would like to continue (1-4)")
         layout.addWidget(instruction_label, len(images) // 2 + 1, 0, 1, 2)
@@ -112,7 +111,7 @@ class ImageWindow(QDialog):
         else:
             event.accept()  # Closing the window with an id in the input box is also not possible
 
-class ImageWindowRounds(QDialog): #similar to the above, but specific to the last round
+class ImageWindowRounds(QDialog): # Similar to the above, but specific to the last round
     def __init__(self, images):
         super().__init__()
         self.setWindowTitle("Final results!")
@@ -156,7 +155,6 @@ class StartWindow(QDialog): # Has the instructions on it
         self.label = QLabel("Welcome to the experiment and thank you for your participation.\n\nPlease make sure you have an internet connection and plenty of battery. Your goal is to teach a virtual agent to become\nthe best at navigating mazes. You will do this by iteratively creating mazes for 10 rounds on which the agent can train first.\n\nIn the next screen, you will be shown an example of a poorly trained agent. The route it took is shown as dotted lines.\nPlease enter your participant ID once you have looked at the example. \n\n\n\nDuring the experiment, you will be shown 4 mazes per round. Each of these has adjustable variables, you are completely free in\nwhat and how you decide to change/leave unchanged. White arrows within a maze are clues, they can't be changed.\nGrey arrows are traps, their prevalence can be increased/decreased.\n\nWhen you feel you are done with the 4 mazes, you may click the 'Submit' button in that screen.\nA pop up is then shown to indicate the training has begun, during which you won’t need to do anything.\n\nThis training process may take a few minutes (2-10 min., depending on your submitted mazes) and you are not obligated to\nstay in front of your screen during that time. Once the popup disappears, the results of your training are shown.\nEach result shows 1 maze you created and 3 rotated versions.\n\nYou may select 1 result from the drop-down menu to take to the next round. All mazes will be updated to the one you picked.\nThen the cycle begins again for the next round. For the last round you don't need to pick a result.\nYour final test results may hold your agent's best performance yet!\n\n\n\nThe end screen will link you to a survey. Please fill this in (it's anonymous), after which you may claim your compensation.\n\nTo begin, please click 'start' to see the poorly trained example agent.\n")
         self.label.setTextInteractionFlags(Qt.TextSelectableByMouse)
 
-        # Set the font size
         font = self.label.font()
         font.setPointSize(11)  # Adjust the font size as needed
         self.label.setFont(font)
@@ -164,7 +162,6 @@ class StartWindow(QDialog): # Has the instructions on it
         layout.addWidget(self.label)
         self.start_button = QPushButton("Start", self)
         self.start_button.clicked.connect(self.accept)
-        #self.start_button.clicked.connect(show_image_window)  # Connect to the new function
         layout.addWidget(self.start_button)
         self.setLayout(layout)
 
