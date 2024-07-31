@@ -8,10 +8,10 @@
 #SBATCH --cpus-per-task=1
 #SBATCH --time=3:00:00
 #SBATCH --mail-type=END
-#SBATCH --mail-user=number@student.vu.nl
+#SBATCH --mail-user= # mail where notifications should go
 
-# Load the required modules or activate the environment
-source /home/user/master_thesis/bin/activate
+# Load the required modules or activate the environment, example for loading venv:
+source /home/user/project/bin/activate
 
 # The argument passed to the script
 DATA_FILE=$1
