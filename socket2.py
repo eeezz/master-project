@@ -6,7 +6,7 @@ import os
 import time
 
 BUFFER_SIZE = 4096
-HOST = '10.0.0.1'
+HOST = 'localhost' # If hosted on a ripper with the interface elsewhere, use tunnelforwarding instead of solely the socket connection.
 PORT = 10022  # Choose any port number that is not already in use
 
 def handle_client_connection(client_socket):
