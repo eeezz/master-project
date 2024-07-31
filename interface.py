@@ -207,14 +207,14 @@ class PreImageWindow(QDialog):
         else:
             event.accept()  # Closing the window with an id in the input box is also not possible
 
-class EndWindow(QDialog):
+class EndWindow(QDialog): #Has redirections to a survey
     def __init__(self, main_window):
         super().__init__()
         self.setWindowTitle("End")
         self.resize(450, 300)
         layout = QVBoxLayout()
         self.label = QLabel(
-            "Thank you for participating.\n\n Please copy the following link to complete the survey. \n https://forms.gle/HhGsPgW7ndKAbLP17\n\n You may now close the program.")
+            "Thank you for participating.\n\n Please copy the following link to complete the survey. \n https://forms.gle/rest/of/a/link You may now close the program.")
         self.label.setTextInteractionFlags(Qt.TextSelectableByMouse)
         # Set font size
         font = self.label.font()
@@ -229,9 +229,9 @@ class EndWindow(QDialog):
 
     def on_close(self):
         self.accept()  # Closes EndWindow
-        self.main_window.close()  # Closes main window. Does give error, but since it closes anyway i think it's fine. AttributeError: 'EndWindow' object has no attribute 'main_window'
+        self.main_window.close()  # Closes main window. Does give error, but since it closes anyway i think it's fine. "AttributeError: 'EndWindow' object has no attribute 'main_window'"
 
-class ProgressDialog(QDialog):
+class ProgressDialog(QDialog): # The pop up
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Training is currently in progress... Do not close")
@@ -244,11 +244,11 @@ class ProgressDialog(QDialog):
     def set_message(self, message):
         self.label.setText(message)
 
-class MainWindow(QWidget):
+class MainWindow(QWidget): # Most important window
     def __init__(self):
         super().__init__()
         self.resize(1840, 980)
-        self.round_count = 0  # Initialize count for experiment rounds. Is a necessary line.
+        self.round_count = 0  # Initialize count for experiment rounds.
 
         self.start_window = StartWindow() # Initialize the start up window
         self.start_window.exec_()
@@ -369,8 +369,8 @@ class MainWindow(QWidget):
             trap=[amaze.Sign(value=.5)]
         )
 
-    def save_settings(self): # Sends to server and saves mazes to file.
-        # Added round incrementation
+    def save_settings(self): # Sends to server used to save mazes to file.
+        # Add round incrementation
         self.round_count += 1
 
         settings = []
@@ -402,7 +402,7 @@ class MainWindow(QWidget):
         maze_strings = settings
 
         # Show progress dialog after each round. This is where everything happens from after user submission
-        if self.round_count < 10: #make 10
+        if self.round_count < 10: # Adjust as needed. Currently 10 rounds have to pass.
             self.show_progress_dialog(maze_strings)
         else:
             self.show_progress_dialog_rounds(maze_strings)
@@ -431,7 +431,7 @@ class MainWindow(QWidget):
         QTimer.singleShot(2000, self.progress_dialog.accept)
         QTimer.singleShot(2000, lambda: self.show_images(images, maze_strings))
 
-    def show_progress_dialog_rounds(self, maze_strings):
+    def show_progress_dialog_rounds(self, maze_strings): # Same as show_progress_dialog, but for the last round
         self.setEnabled(False)  # Disable the MainWindow
         self.progress_dialog = ProgressDialog()
         self.progress_dialog.setWindowModality(Qt.WindowModal)
@@ -449,17 +449,17 @@ class MainWindow(QWidget):
             QMessageBox.warning(None, 'Error', "No response from server.")
             self.setEnabled(True)  # Re-enable the MainWindow
 
-    def rounds_finished(self, images, maze_strings):
+    def rounds_finished(self, images, maze_strings):  # Same as process_finished, but for the last round
         self.setEnabled(True)  # Re-enable the MainWindow
         self.progress_dialog.set_message("Congrats, you are done. Here are your final results")
         QTimer.singleShot(2000, self.progress_dialog.accept)
         QTimer.singleShot(2000, lambda: self.show_images_rounds(images))
 
-    def show_images(self, images, maze_strings): #worked without update and the functions below to at least show something.
+    def show_images(self, images, maze_strings):
         image_window = ImageWindow(images, maze_strings, self.update_maze_data)
         image_window.exec_()
 
-    def show_images_rounds(self, images):
+    def show_images_rounds(self, images): # Same as show_images, but for the last round
         image_window = ImageWindowRounds(images)
         image_window.exec_()
         self.start_end_window()
@@ -467,7 +467,8 @@ class MainWindow(QWidget):
     def start_end_window(self):
         self.end_window = EndWindow(self)
         self.end_window.exec_()
-
+	    
+    # To updated mazes based on selected result
     def update_maze_data(self, new_maze_string):
         maze_data = new_maze_string
         self.update_mazes(maze_data)
@@ -507,6 +508,9 @@ class MainWindow(QWidget):
             p_trap=data["Traps"] / 100, # Keep it at 100
             trap=[amaze.Sign(value=.5)]
         )
+
+
+
 
 def main(is_test=False):
     app = amaze.application()
