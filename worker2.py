@@ -86,10 +86,9 @@ def create_round_image(participant_id, round_images):
     results_folder = pathlib.Path(f"results/{participant_id}")
     round_image_path = results_folder / "round_image.png"
 
-    # Since all images are the same size
+    # Since all images are the same size, create a new vertical image for the round
     image_width, image_height = round_images[0].size
-
-    # Create a new vertical image for the round
+    
     round_image = Image.new('RGB', (image_width, image_height * 4), (255, 255, 255))
 
     for i, img in enumerate(round_images):
@@ -162,7 +161,7 @@ if __name__ == "__main__":
     simple_strs = make_string(maze_strings)
     image_paths = main_learning(simple_strs, participant_id, is_test=False)
 
-    # Save images to a JSON file (specify as output file in .slurm)
+    # Save images to a JSON file (specify as output file in worker_job.slurm)
     output_file = f"image_paths_{participant_id}.json"
     with open(output_file, 'w') as f:
         json.dump(image_paths, f)
