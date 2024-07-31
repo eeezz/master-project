@@ -1,7 +1,7 @@
 # master-project
 This project consists of two parts: an interface and a server, which is responisble for training. It is possible to split this server and insert a slurm script for use of resource allocation on a ripper. Make use of tunnelforwarding if a ripper is used, by adding this before the socket function. 
 
-interface.py: the entire interface which allows for the creation of 4 mazes with interactable variables (seed, size, unicursive, traps, direction). When submitting mazes, a pop up is shown. The main window is not interactible while the pop up is there, clicking it too often can potentially lead to the interface crashing and closing especially on windows. This pop up errors out if no connection to a server can be made. The pop up changes its message and closes automatically when training has succeeded. Success will lead to a screen with results being shown. Entering an ID after the first instruction screen is mandatory as of now, it takes any values.
+interface.py: the entire interface which allows for the creation of 4 mazes with interactable variables (seed, size, unicursive, traps, direction) for 10 rounds. When submitting mazes, a pop up is shown. The main window is not interactible while the pop up is there, clicking it too often can potentially lead to the interface crashing and closing especially on windows. This pop up errors out if no connection to a server can be made. The pop up changes its message and closes automatically when training has succeeded. Success will lead to a screen with results being shown. Entering an ID after the first instruction screen is mandatory as of now, it takes any values.
 
 pretrained agent image.png: Image used in the interface.
 
