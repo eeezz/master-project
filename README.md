@@ -8,5 +8,7 @@ pretrained agent image.png: Image used in the interface.
 serverexample.py: Uses socket library for connection. The entire server as one file. Training and maze conversions is included, as is creating timeline imgages. The function make_string takes the trap probabilities, but does not define that sign and no clues are included. Resulting maze strings lack any signs. Agents do not encounter signs on any such intersections. Result evalution images are encoded and returned to the interface. The HOST constant can be used to define a non-public ip adress, if both interface and server are hosted on the same device/network.
 
 socket2.py: split of serverexample, handles connections.
+
 worker2.py: split of serverexample, handles training.
+
 worker_job.slurm: slurm file to be used on a ripper in conjunction with socket2 and worker2. Use tunnelforwarding in socket2 in that case.
