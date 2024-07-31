@@ -27,7 +27,7 @@ def handle_client_connection(client_socket):
         slurm_command = ["sbatch", "worker.slurm", data_file]
         subprocess.run(slurm_command)
 
-        # Wait for SLURM job to complete (still simple way to wait, make into more robust solution if see is needed)
+        # Wait for SLURM job to complete (Is a simple way to wait, make into more robust solution if needed)
         output_file = f"image_paths_{participant_id}.json"
         while not os.path.exists(output_file):
             time.sleep(5)
@@ -52,7 +52,7 @@ def main():
     print(f"Server listening on {HOST}:{PORT}")
 
     try:
-        while True:  # Must accept client connection and state so
+        while True:
             client_socket, client_address = server_socket.accept()
             print("Accepted connection from", client_address)
             # Make a new thread
